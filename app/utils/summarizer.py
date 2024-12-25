@@ -14,9 +14,6 @@ class GeminiSummarizer:
 
         self.request_count = 0
         self.token_usage = 0
-
-         
-    
     
     def summarize_all_sections_in_one_call(self,sections: Dict[str, str]) -> Dict[str, str]:
         

@@ -1,13 +1,20 @@
 import pymupdf
-from dotenv import load_dotenv
 import os
 from groq import Groq, APIError
-load_dotenv()
 import string
 import time
 import json
-from langchain.prompts import PromptTemplate
-from langchain.output_parsers import StructuredOutputParser, ResponseSchema
+from langchain_core.output_parsers import JsonOutputParser
+from dotenv import load_dotenv
+from pydantic import BaseModel, Field
+load_dotenv()
+
+class Section(BaseModel):
+    section_name: str = Field(description="Name of the section")
+    section_text: str = Field(description="Text content of the section")
+
+
+parser = JsonOutputParser(pydantic_object=Section)
 
 class ExtractionAndChunking:
     def __init__(self, file_path: str):
@@ -48,31 +55,28 @@ class ExtractionAndChunking:
 
         return chunks
 
-    def process_response(self, response_content):
-        """Parses the JSON response safely."""
-        try:
-            
-            parsed_response = json.loads(response_content)
+    def process_response(self, parsed_response):
+      """Processes the parsed response safely."""
+      try:
+          print("Parsed Response:", parsed_response)
 
-            
-            sections = {}
-            if isinstance(parsed_response, list):
-                for entry in parsed_response:
-                    section_name = entry.get('section_name', '').strip()
-                    section_text = entry.get('section_text', '').strip()
-                    if section_name and section_text:
-                        sections[section_name] = section_text
-            elif isinstance(parsed_response, dict):
-                section_name = parsed_response.get('section_name', '').strip()
-                section_text = parsed_response.get('section_text', '').strip()
-                if section_name and section_text:
-                    sections[section_name] = section_text
+          sections = {}
+          if isinstance(parsed_response, list):
+              for entry in parsed_response:
+                  section_name = entry.get('section_name', '').strip()
+                  section_text = entry.get('section_text', '').strip()
+                  if section_name and section_text:
+                      sections[section_name] = section_text
+          elif isinstance(parsed_response, dict):
+              section_name = parsed_response.get('section_name', '').strip()
+              section_text = parsed_response.get('section_text', '').strip()
+              if section_name and section_text:
+                  sections[section_name] = section_text
 
-            return sections
-        except json.JSONDecodeError as e:
-            print(f"Failed to parse JSON response: {e}")
-            print("Raw response content:", response_content)
-            return {}
+          return sections
+      except Exception as e:
+          print(f"Unexpected error in process_response: {e}")
+          return {}
 
 
 
@@ -122,7 +126,10 @@ class ExtractionAndChunking:
                 token_count = len(system_prompt.split()) + len(user_prompt.split()) + len(response.choices[0].message.content.split())
                 token_usage += token_count
                 print(f"Tokens used in this request: {token_count}, Total so far: {token_usage}")
-                chunk_sections = self.process_response(response.choices[0].message.content)
+
+                parsed_sections = parser.parse(response.choices[0].message.content)
+                print(parsed_sections)
+                chunk_sections = self.process_response(parsed_sections)
 
                 
                 for section, content in chunk_sections.items():

@@ -22,7 +22,7 @@ class ExtractionAndChunking:
         self.client = Groq()
 
     def extract_text_from_pdf_pymupdf(self):
-    
+
         extracted_text = ""
 
         with pymupdf.open(self.file) as pdf:
@@ -31,7 +31,7 @@ class ExtractionAndChunking:
                 extracted_text += page.get_text("text") + "\n"
 
         return extracted_text
-    
+
 
     def split_text_into_chunks(self,text, max_token_size=3500, overlap=500):
         self.text = text
@@ -84,14 +84,14 @@ class ExtractionAndChunking:
 
         self.extracted_text = extracted_text
         self.text_chunks = self.split_text_into_chunks(self.extracted_text)
-       
+
         self.all_sections = {}
 
-        api_key = os.environ.get("GROQ_API_KEY") 
+        api_key = os.environ.get("GROQ_API_KEY")
         token_usage = 0
 
-        client = Groq(api_key=api_key)  
-        
+        client = Groq(api_key=api_key)
+
         for idx, chunk in enumerate(self.text_chunks):
             print(f"Processing chunk {idx + 1}/{len(self.text_chunks)}")
 
@@ -113,7 +113,7 @@ class ExtractionAndChunking:
                 }}
             ]
             """
-            
+
             try:
                 response = client.chat.completions.create(
                     model="llama-3.1-70b-versatile",
@@ -131,7 +131,7 @@ class ExtractionAndChunking:
                 print(parsed_sections)
                 chunk_sections = self.process_response(parsed_sections)
 
-                
+
                 for section, content in chunk_sections.items():
                     if section in self.all_sections:
                         self.all_sections[section] += "\n" + content

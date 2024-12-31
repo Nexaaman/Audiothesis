@@ -6,13 +6,11 @@ from dotenv import load_dotenv
 import os
 import uuid
 from langchain_pinecone import PineconeVectorStore
-from langchain.vectorstores import Pinecone
 from langchain.storage import InMemoryStore
 from langchain.schema import Document
 from langchain.retrievers import MultiVectorRetriever
 from langchain_cohere import CohereEmbeddings
 from pinecone import Pinecone,ServerlessSpec
-import pinecone
 load_dotenv()
 
 def context_generation(summary: Dict[str, str]) -> str:
@@ -36,18 +34,15 @@ def context_generation(summary: Dict[str, str]) -> str:
 
     return context
 
-class GenerateEmbeeding():
+class GenerateEmbedings():
     def __init__(self,text_summary: Dict[str, str], image_summaries: List[str] , table_summaries: List[str]):
         self.text_summary = text_summary
         self.image_summaries = image_summaries
         self.table_summaries = table_summaries
 
     def embed(self):
-
-        client = Pinecone(api_key=os.environ.get("Pinecone_API_KEY"))
         
         index_name = "multi-modal-rag2"
-
 
         embeddings = CohereEmbeddings(model="embed-english-light-v3.0")  
         vectorstore = PineconeVectorStore.from_existing_index(

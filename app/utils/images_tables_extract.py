@@ -32,12 +32,12 @@ class ImageTable:
                 for image in page.images:
                     bbox = (image["x0"], image["top"], image["x1"], image["bottom"])
                     cropped_image = page.within_bbox(bbox).to_image()
-                    base64_image = self.image_to_base64(cropped_image.original)  # Convert to base64
+                    base64_image = self.image_to_base64(cropped_image.original)
                     images_base64.append(base64_image)
 
                 page_tables = page.extract_tables()
                 for table in page_tables:
-                    df = pd.DataFrame(table[1:], columns=table[0])  # Convert to DataFrame
+                    df = pd.DataFrame(table[1:], columns=table[0])
                     table_dict = self.format_table_as_unstructured(df.to_dict(), page_number)
                     tables_list.append(table_dict)
         e = time.time()

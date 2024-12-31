@@ -64,7 +64,7 @@ class GeminiSummarizer:
       self.tables = tables
       self.table_summaries = []
 
-      # Define the prompt template for table summarization
+      
       prompt_template = """Describe the table in detail. For context,
                     the table is part of a research paper with objective: {context}.
                     Be specific about the contents and highlight key insights.
@@ -75,23 +75,23 @@ class GeminiSummarizer:
       
       prompt = ChatPromptTemplate.from_template(prompt_template)
 
-      # Initialize the LLM model
+      
       model = ChatCohere(temperature=0.5,
         model="command-r-08-2024",
         cohere_api_key=os.environ.get("COHERE_API_KEY"))
       summarize_chain = prompt | model | StrOutputParser()
 
-      # Process each table in the list
+     
       for table in tables:
           try:
-              # Convert table content to string and format for LLM
+              
               table_content = str(table['content']).replace("{", "{{").replace("}", "}}")
               table_content = str(table['content']).replace("{", "{{").replace("}", "}}")
-              # Generate summary for the table
+              
               table_summary = summarize_chain.invoke({"context": context, "table": table_content})
               self.table_summaries.append(table_summary)
 
-              # Avoid rapid successive API calls
+              
               time.sleep(2)
           except google.api_core.exceptions.ResourceExhausted:
               print(f"Rate limit exceeded. Waiting for 60 seconds before retrying...")
@@ -105,8 +105,6 @@ class GeminiSummarizer:
     
     
     def text_summarize(self,sections: Dict[str, str]) -> Dict[str, str]:
-
-        #global request_count, token_usage
 
         genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 

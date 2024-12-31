@@ -7,6 +7,12 @@ import json
 from langchain_core.output_parsers import JsonOutputParser
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
+import pdfplumber
+import base64
+import io
+import pandas as pd
+import time
+
 load_dotenv()
 
 class Section(BaseModel):
@@ -58,8 +64,7 @@ class ExtractionAndChunking:
     def process_response(self, parsed_response):
       """Processes the parsed response safely."""
       try:
-          print("Parsed Response:", parsed_response)
-
+          
           sections = {}
           if isinstance(parsed_response, list):
               for entry in parsed_response:
@@ -116,7 +121,7 @@ class ExtractionAndChunking:
 
             try:
                 response = client.chat.completions.create(
-                    model="llama-3.1-70b-versatile",
+                    model="llama-3.3-70b-versatile",
                     messages=[
                         {'role': "system", "content": system_prompt},
                         {'role': "user", "content": user_prompt}
@@ -128,7 +133,7 @@ class ExtractionAndChunking:
                 print(f"Tokens used in this request: {token_count}, Total so far: {token_usage}")
 
                 parsed_sections = parser.parse(response.choices[0].message.content)
-                print(parsed_sections)
+                
                 chunk_sections = self.process_response(parsed_sections)
 
 

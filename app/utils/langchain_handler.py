@@ -5,7 +5,7 @@ from base64 import b64decode
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 import os
-
+from langchain_cohere import ChatCohere
 class QA:
 
     def __init__(self, retriever):
@@ -55,34 +55,42 @@ class QA:
           ]
       )
 
-    def response(self, Question: str, option: bool):
+    def get_answer(self, Question: str):
 
         self.Question = Question
-        self.option = option
+        
         chain = (
             {
                 "context": self.retriever | RunnableLambda(self.parse_docs),
                 "question": RunnablePassthrough(),
             }
             | RunnableLambda(self.build_prompt)
-            | ChatGroq(model="llama-3.1-8b-instant", api_key = os.environ.get("GROQ_API_KEY"))
+            | ChatGroq(model="llama-3.3-70b-versatile", api_key = os.environ.get("GROQ_API_KEY"))
             | StrOutputParser()
         )
 
-        chain_with_sources = {
-            "context": self.retriever| RunnableLambda(self.parse_docs),
-            "question": RunnablePassthrough(),
-        } | RunnablePassthrough().assign(
-            response=(
-                RunnableLambda(self.build_prompt)
-                | ChatGroq(model="llama-3.1-8b-instant",  api_key = os.environ.get("GROQ_API_KEY"))
-                | StrOutputParser()
-            )
-        )
+        response = chain.invoke(Question)
+        
+        return response
 
-        if self.option == True:
-            response = chain_with_sources.invoke(Question)
-        else:
-            response = chain.invoke(Question)
+    def response(self, answer) -> str:
+
+        prompt_text = f"""Here is an extracted {answer} of a question asked by user from a research paper.
+                        Please rewrite this answer to make it more engaging and user-friendly.
+                        Focus on improving readability and interaction quality.
+                        Avoid using JSON or dictionary formats; provide a clean,
+                        well-written answer in plain text."""
+
+        model = ChatCohere(
+            temperature=0,
+            model="command-r-08-2024",
+            cohere_api_key=os.environ.get("COHERE_API_KEY")
+        )
+        prompt = ChatPromptTemplate.from_template(prompt_text)
+
+        response_chain = prompt | model | StrOutputParser()
+        response = response_chain.invoke({"answer": answer})
 
         return response
+
+
